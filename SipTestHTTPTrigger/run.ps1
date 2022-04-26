@@ -6,13 +6,17 @@ param($Request, $TriggerMetadata)
 # Write to the Azure Functions log stream.
 Write-Host "PowerShell HTTP trigger function processed a request."
 
+$Openssl = openssl s_client -connect sipdir.online.lync.com:5061
+
 # Interact with query parameters or the body of the request.
 $name = $Request.Query.Name
 if (-not $name) {
     $name = $Request.Body.Name
 }
 
-$body = "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
+#$body = "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
+
+$body = $Openssl
 
 if ($name) {
     $body = "Hello, $name. This HTTP triggered function executed successfully."
