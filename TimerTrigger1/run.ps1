@@ -9,24 +9,34 @@ if ($Timer.IsPastDue) {
     Write-Host "PowerShell timer is running late!"
 }
 
-$Openssl = openssl s_client -connect "sipdir.online.lync.com:5061" 2>/dev/null | openssl x509 -noout -dates
+# Variables
 
-## Fix the date
-$Openssl[0] -replace "notBefore=",""
-
-
-<## Format
-notBefore=Oct 31 00:00:00 2013 GMT
-So, first we need to remove the notBefore= part:
-
-dateStr=${NotBeforeDate/notBefore=/}
-Then you can use the date command:
-
-date --date="$dateStr" --utc +"%m-%d-%Y"
+$ServertoCheck = "sipdir.online.lync.com"
+$Port = "5061"
+$CertWarninginDays = "365"
 
 
-date --date="$(echo | openssl s_client -connect sipdir.online.lync.com:5061 | openssl x509 -noout -enddate | awk -F '=' '{print $NF}' )" --iso-8601
-#>
+###
+$ServerConnectCommand = $servertocheck + ":" + $Port
 
-# Write an information log with the current time.
+$SSHOutput = openssl s_client -connect "sipdir.online.lync.com:5061" 2>/dev/null | openssl x509 -noout -dates
+
+
+
+###Windows Debug
+#cd "C:\Program Files\OpenSSL-Win64\bin"
+#$SSHOutput = .\openssl.exe s_client -connect "$ServerConnectCommand" | .\openssl.exe x509 -noout -dates
+
+$CurrentDate = Get-Date
+
+
+$CertExpirationDate = [datetime]::ParseExact(
+  ($sshoutput[1] -replace '^notAfter='), 
+  'MMM d HH:mm:ss yyyy GMT',
+   [cultureinfo]::InvariantCulture
+) 
+
+$DaystoCertExpiration = (New-TimeSpan -Start (Get-Date) -End $CertExpirationDate).Days
+
+if ($DaystoCertExpiration -lt $CertWarninginDays) {Write-Host "WARNING:$($ServertoCheck) has a certificate that expires in $($DaystoCertExpiration)" }
 Write-Host "PowerShell timer trigger function ran! TIME: $currentUTCtime"
